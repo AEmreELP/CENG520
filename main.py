@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-
+import math
 
 def compute_kitchen_rosenfeld_cornerness(gray):
     """
@@ -11,10 +11,50 @@ def compute_kitchen_rosenfeld_cornerness(gray):
     # Sobel operatörü ile x ve y yönlerinde türev hesaplama
     Ix = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
     Iy = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
+    Ixx = cv2.Sobel(Ix, cv2.CV_64F, 1, 0, ksize=3)
+    Ixy = cv2.Sobel(Ix, cv2.CV_64F, 0, 1, ksize=3)
+    Iyy = cv2.Sobel(Iy, cv2.CV_64F, 0, 1, ksize=3)
+    Iyx = cv2.Sobel(Iy, cv2.CV_64F, 1, 0, ksize=3)
+    Ix = cv2.convertScaleAbs(Ix)
+    Iy = cv2.convertScaleAbs(Iy)
+    Ixx = cv2.convertScaleAbs(Ixx)
+    Ixy = cv2.convertScaleAbs(Ixy)
+    Iyy = cv2.convertScaleAbs(Iyy)
+    Iyx = cv2.convertScaleAbs(Iyx)
+    print(Ix.shape)
+    print(Iy.shape)
+    print(Ixx.shape)
+    print(Ixy.shape)
+    print(Iyy.shape)
+    print(Iyx.shape)
 
-    # Türevlere bağlı olarak basit bir köşe ölçüsü
-    cornerness = Ix ** 2 + Iy ** 2
-    return cornerness
+    denom = np.sqrt(Ix ** 2 + Iy ** 2)
+
+
+    # vektör v = [-Iy, Ix]
+    V = np.array([-Iy, Ix])
+    print(V.shape)
+    # Hessian matris H
+    H = np.array([[Ixx, Ixy], [Iyx, Iyy]])
+    print(H.shape)
+    out=np.matmul(H, V)
+    print(out)
+    VT = V.reshape(2, -1)
+
+    print(V)
+    print(H)
+
+    print(VT.shape)
+
+    # temp = np.dot(V,H)
+    # val = np.dot(temp,VT)
+    # print(val)
+
+
+    # Sonuç (denklemdeki 1/(sqrt(Ix^2 + Iy^2))^2 = 1/(Ix^2 + Iy^2))
+    # K = val / (denom ** 2)
+    return 0
+
 
 
 def non_maximum_suppression(cornerness, window_size=3):
@@ -58,19 +98,19 @@ def main():
     # Köşe ölçüsünü hesapla
     cornerness = compute_kitchen_rosenfeld_cornerness(gray)
 
-    # Kullanıcı tanımlı pencere boyutunu belirle (örneğin: 3x3)
-    window_size = 3  # Bu değeri isteğinize göre değiştirebilirsiniz.
-    suppressed = non_maximum_suppression(cornerness, window_size=window_size)
-
-    # Eşik değerini belirle. Bu değer deneysel olarak ayarlanmalıdır.
-    thresh = 1e6  # Örneğin, 1e6 gibi bir eşik değeri; görüntünüze bağlı olarak değiştirin.
-    marked_image = mark_corners_on_image(image, suppressed, thresh)
+    # # Kullanıcı tanımlı pencere boyutunu belirle (örneğin: 3x3)
+    # window_size = 3  # Bu değeri isteğinize göre değiştirebilirsiniz.
+    # suppressed = non_maximum_suppression(cornerness, window_size=window_size)
+    #
+    # # Eşik değerini belirle. Bu değer deneysel olarak ayarlanmalıdır.
+    # thresh = 1e6  # Örneğin, 1e6 gibi bir eşik değeri; görüntünüze bağlı olarak değiştirin.
+    # marked_image = mark_corners_on_image(image, suppressed, thresh)
 
     # Sonuçları göster
-    cv2.imshow("Original Image", image)
-    cv2.imshow("Cornerness", cv2.normalize(cornerness, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8))
-    cv2.imshow("Suppressed Corners", cv2.normalize(suppressed, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8))
-    cv2.imshow("Corners on Image", marked_image)
+    # cv2.imshow("Original Image", image)
+    # cv2.imshow("Cornerness", cv2.normalize(cornerness, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8))
+    # cv2.imshow("Suppressed Corners", cv2.normalize(suppressed, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8))
+    # cv2.imshow("Corners on Image", marked_image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
